@@ -12,6 +12,8 @@ import scala.util.Try
  * The DynamicAccess implementation is the class which is used for
  * loading all configurable parts of an actor system (the
  * [[akka.actor.ReflectiveDynamicAccess]] is the default implementation).
+  * `DynamicAccess`的实现类是用来加载ActorSystem中的所有可配置部分的
+  * `ReflectiveDynamicAccess`是默认的实现
  *
  * This is an internal facility and users are not expected to encounter it
  * unless they are extending Akka in ways which go beyond simple Extensions.

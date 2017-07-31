@@ -26,6 +26,7 @@ object ActorRef {
 
 /**
  * Immutable and serializable handle to an actor, which may or may not reside
+  * 一个Actor的不可变的且序列化后的句柄,他们可能属于,也可能不属于本地host或者同一个ActorSystem。
  * on the local host or inside the same [[akka.actor.ActorSystem]]. An ActorRef
  * can be obtained from an [[akka.actor.ActorRefFactory]], an interface which
  * is implemented by ActorSystem and [[akka.actor.ActorContext]]. This means
@@ -33,6 +34,7 @@ object ActorRef {
  * existing actor, but only from within that actor.
  *
  * ActorRefs can be freely shared among actors by message passing. Message
+  * ActorRefs可以在Actors之间随便共享,以用来进行消息的传递。相互传递消息是它们的唯一目的。
  * passing conversely is their only purpose, as demonstrated in the following
  * examples:
  *
@@ -83,18 +85,25 @@ object ActorRef {
  * }}}
  *
  * ActorRef does not have a method for terminating the actor it points to, use
+  * ActorRef没有办法去终止它所指向的Actor,但可以通过。。。。。。
  * [[akka.actor.ActorRefFactory]]`.stop(ref)`, or send a [[akka.actor.PoisonPill]],
  * for this purpose.
  *
  * Two actor references are compared equal when they have the same path and point to
+  * 两个ActorRef当且仅当它们有相同的path且指向同一个Actor实例时,才相等。
  * the same actor incarnation. A reference pointing to a terminated actor doesn't compare
+  * 一个指向已经终止的Actor的Ref,不等于指向另一个Actor的Ref,即使它们有相同的path。
  * equal to a reference pointing to another (re-created) actor with the same path.
  * Actor references acquired with `actorFor` do not always include the full information
+  * 通过actorFor获取的ActorRef,并不总是能够包含关于它指向的actor的所有信息,因此,这些Ref并不总是
  * about the underlying actor identity and therefore such references do not always compare
+  * 与actorOf、sender、context.self获取的Ref相等
  * equal to references acquired with `actorOf`, `sender`, or `context.self`.
  *
  * If you need to keep track of actor references in a collection and do not care
+  * 如果你需要在集合中跟踪actor,但是不关心真正的actor实例,则可以使用ActorPath作为key,
  * about the exact actor incarnation you can use the ``ActorPath`` as key because
+  * 因为actor的唯一id,在比较ActorPaths时,是不在考虑范围内的
  * the unique id of the actor is not taken into account when comparing actor paths.
  */
 abstract class ActorRef extends java.lang.Comparable[ActorRef] with Serializable {
@@ -197,10 +206,15 @@ private[akka] trait LocalRef extends ActorRefScope {
 
 /**
  * RepointableActorRef (and potentially others) may change their locality at
+  * `RepointableActorRef`可能会在运行时改变它的`locality`
  * runtime, meaning that isLocal might not be stable. RepointableActorRef has
+  * 意味着`isLocal`不是固定的
  * the feature that it starts out “not fully started” (but you can send to it),
+  * `RepointableActorRef`具有这样的特性,它启动是非完全启动,但是可以向它发送消息
  * which is why `isStarted` features here; it is not improbable that cluster
+  * 这也是为什么有`isStarted`这个属性
  * actor refs will have the same behavior.
+  * 集群中的ActorRef是不太可能具有该行为特性的
  */
 private[akka] trait RepointableRef extends ActorRefScope {
   def isStarted: Boolean
@@ -258,6 +272,7 @@ private[akka] abstract class InternalActorRef extends ActorRef with ScalaActorRe
 
 /**
  * Common trait of all actor refs which actually have a Cell, most notably
+  * 具有Cell的所有ActorRef的公共Trait,特别是`LocalActorRef`和`RepointableActorRef`
  * LocalActorRef and RepointableActorRef. The former specializes the return
  * type of `underlying` so that follow-up calls can use invokevirtual instead
  * of invokeinterface.
@@ -456,6 +471,7 @@ sealed trait AllDeadLetters {
 /**
  * When a message is sent to an Actor that is terminated before receiving the message, it will be sent as a DeadLetter
  * to the ActorSystem's EventStream
+  * 当一个消息被发送给一个actor,而这个actor在收到这个消息前被终止了,那么这个消息会被作为死信发送到ActorSystem的EventStream中
  */
 @SerialVersionUID(1L)
 case class DeadLetter(message: Any, sender: ActorRef, recipient: ActorRef) extends AllDeadLetters {
@@ -466,6 +482,8 @@ case class DeadLetter(message: Any, sender: ActorRef, recipient: ActorRef) exten
 /**
  * Use with caution: Messages extending this trait will not be sent to dead-letters.
  * Instead they will be wrapped as [[SuppressedDeadLetter]] and may be subscribed for explicitly.
+  * 注意事项: 继承这个trait的消息,将不会发到死信信箱。
+  * 他们会被包装成`SuppressedDeadLetter`,需要明确的订阅
  */
 trait DeadLetterSuppression
 

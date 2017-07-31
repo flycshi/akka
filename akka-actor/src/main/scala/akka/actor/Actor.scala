@@ -14,17 +14,21 @@ import akka.event.LoggingAdapter
  * INTERNAL API
  *
  * Marker trait to show which Messages are automatically handled by Akka
+  * 用来标记被akka自动处理的消息
  */
 private[akka] trait AutoReceivedMessage extends Serializable
 
 /**
  * Marker trait to indicate that a message might be potentially harmful,
  * this is used to block messages coming in over remoting.
+  * 标记trait,用来指明,一个消息可能存在潜在的有害的
+  * 这个倍用来阻止来自远程的消息
  */
 trait PossiblyHarmful
 
 /**
  * Marker trait to signal that this class should not be verified for serializability.
+  * 用来标记class不需要进行序列化校验
  */
 trait NoSerializationVerificationNeeded
 
@@ -32,6 +36,7 @@ abstract class PoisonPill extends AutoReceivedMessage with PossiblyHarmful with 
 
 /**
  * A message all Actors will understand, that when processed will terminate the Actor permanently.
+  * 一个所有actors都会晓得的消息,当处理到时,会永久性的终止该actor
  */
 @SerialVersionUID(1L)
 case object PoisonPill extends PoisonPill {
@@ -45,6 +50,7 @@ abstract class Kill extends AutoReceivedMessage with PossiblyHarmful
 /**
  * A message all Actors will understand, that when processed will make the Actor throw an ActorKilledException,
  * which will trigger supervision.
+  * 当被处理到时,会使得actor抛出`ActorKilledException`异常,该异常会触发监管机制
  */
 @SerialVersionUID(1L)
 case object Kill extends Kill {
@@ -81,16 +87,22 @@ case class ActorIdentity(correlationId: Any, ref: Option[ActorRef]) {
 /**
  * When Death Watch is used, the watcher will receive a Terminated(watched)
  * message when watched is terminated.
+  * 当使用了终止监测,在被监测者被终止时,监测者会收到一个`Terminated(watched)`消息
  * Terminated message can't be forwarded to another actor, since that actor
+  * 终止消息不能被递传给其他的actor,因为那个actor可能没有监测这个actor
  * might not be watching the subject. Instead, if you need to forward Terminated
  * to another actor you should send the information in your own message.
+  * 但如果你需要递传终止消息给另一个actor,你需要以自己的消息形式去发送这个信息
  *
  * @param actor the watched actor that terminated
  * @param existenceConfirmed is false when the Terminated message was not sent
  *   directly from the watched actor, but derived from another source, such as
  *   when watching a non-local ActorRef, which might not have been resolved
+  *   为false时,是由于终止消息不是由监测的actor直接发过来的,而是通过其他信息推导出来的,
+  *   比如监测一个非本地的ActorRef,但是没有被解析
  * @param addressTerminated the Terminated message was derived from
  *   that the remote node hosting the watched actor was detected as unreachable
+  *   终止消息是通过探测到监测actor所在的远程节点连不上而推导出来的消息
  */
 @SerialVersionUID(1L)
 case class Terminated private[akka] (@BeanProperty actor: ActorRef)(
@@ -173,6 +185,8 @@ object ActorInitializationException {
  * exception is not propagated to the supervisor, as it originates from the
  * already failed instance, hence it is only visible as log entry on the event
  * stream.
+  * `PreRestartException`在`preRestart`方法失败时会被抛出
+  * 该异常不会被传递给监管者,因为它来自已经失败的实例,所以它仅仅会打印一条日志
  *
  * @param actor is the actor whose preRestart() hook failed
  * @param cause is the exception thrown by that actor within preRestart()
@@ -220,6 +234,8 @@ object OriginalRestartException {
 /**
  * InvalidMessageException is thrown when an invalid message is sent to an Actor;
  * Currently only `null` is an invalid message.
+  * 当一个无效的消息被发送给一个actor时,会抛出该异常;
+  * 当前只有null是一个无效的消息
  */
 @SerialVersionUID(1L)
 case class InvalidMessageException private[akka] (message: String) extends AkkaException(message)
@@ -325,6 +341,7 @@ trait DiagnosticActorLogging extends Actor {
 object Actor {
   /**
    * Type alias representing a Receive-expression for Akka Actors.
+    * 用来标识一个Akka Actors的接受表达式的别名类型
    */
   //#receive
   type Receive = PartialFunction[Any, Unit]
@@ -343,6 +360,7 @@ object Actor {
   /**
    * Default placeholder (null) used for "!" to indicate that there is no sender of the message,
    * that will be translated to the receiving system's deadLetters.
+    * 默认的sender,用来标识message没有发送者,这回被传送到接受系统的deadLetters
    */
   final val noSender: ActorRef = null
 }

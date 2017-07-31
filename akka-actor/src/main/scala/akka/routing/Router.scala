@@ -13,6 +13,7 @@ import akka.actor.NoSerializationVerificationNeeded
 /**
  * The interface of the routing logic that is used in a [[Router]] to select
  * destination routed messages.
+  * 用来选择消息接收者的路由逻辑的接口
  *
  * The implementation must be thread safe.
  */
@@ -21,6 +22,8 @@ trait RoutingLogic extends NoSerializationVerificationNeeded {
    * Pick the destination for a given message. Normally it picks one of the
    * passed `routees`, but in the end it is up to the implementation to
    * return whatever [[Routee]] to use for sending a specific message.
+    * 为消息选择接收者
+    *
    *
    * When implemented from Java it can be good to know that
    * `routees.apply(index)` can be used to get an element

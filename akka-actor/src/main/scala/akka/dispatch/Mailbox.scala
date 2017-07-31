@@ -33,10 +33,10 @@ private[akka] object Mailbox {
   // Secondary status: Scheduled bit may be added to Open/Suspended
   final val Scheduled = 2 // Deliberately without type ascription to make it a compile-time constant
   // Shifted by 2: the suspend count!
-  final val shouldScheduleMask = 3
-  final val shouldNotProcessMask = ~2
-  final val suspendMask = ~3
-  final val suspendUnit = 4
+  final val shouldScheduleMask = 3      // 3  0000 0000 0000 0000 0000 0000 0000 0011
+  final val shouldNotProcessMask = ~2   // -3 1111 1111 1111 1111 1111 1111 1111 1101
+  final val suspendMask = ~3            // -4 1111 1111 1111 1111 1111 1111 1111 1100
+  final val suspendUnit = 4             // 4  0000 0000 0000 0000 0000 0000 0000 0100
 
   // mailbox debugging helper using println (see below)
   // since this is a compile-time constant, scalac will elide code behind if (Mailbox.debug) (RK checked with 2.9.1)
@@ -108,6 +108,7 @@ private[akka] abstract class Mailbox(val messageQueue: MessageQueue)
 
   @inline
   final def shouldProcessMessage: Boolean = (currentStatus & shouldNotProcessMask) == 0
+    // 处于open或者schedule状态时,可以进行消息的处理
 
   @inline
   final def suspendCount: Int = currentStatus / suspendUnit
@@ -313,17 +314,21 @@ private[akka] abstract class Mailbox(val messageQueue: MessageQueue)
 
 /**
  * A MessageQueue is one of the core components in forming an Akka Mailbox.
+  * `MessageQueue`是akka的`Mailbox`的核心组件。
  * The MessageQueue is where the normal messages that are sent to Actors will be enqueued (and subsequently dequeued)
  * It needs to at least support N producers and 1 consumer thread-safely.
+  * `MessageQueue`是那些发送给Actors的普通消息入队和顺序出队的地方,需要至少支持N个生产者,1个消费者下,保证线程安全
  */
 trait MessageQueue {
   /**
    * Try to enqueue the message to this queue, or throw an exception.
+    * 尝试将消息入队,或者抛出异常
    */
   def enqueue(receiver: ActorRef, handle: Envelope): Unit // NOTE: receiver is used only in two places, but cannot be removed
 
   /**
    * Try to dequeue the next message from this queue, return null failing that.
+    * 尝试从queue中取出消息,如果取不到数据,则返回null
    */
   def dequeue(): Envelope
 
@@ -331,11 +336,15 @@ trait MessageQueue {
    * Should return the current number of messages held in this queue; may
    * always return 0 if no other value is available efficiently. Do not use
    * this for testing for presence of messages, use `hasMessages` instead.
+    * 应该返回当前队列中的消息数量;
+    * 如果没有足够的消息,可能会一直返回0.
+    * 不要用该方法来测试是否有消息存在,应该使用`hasMessage`方法
    */
   def numberOfMessages: Int
 
   /**
    * Indicates whether this queue is non-empty.
+    * 标识队列是否为空
    */
   def hasMessages: Boolean
 
@@ -528,6 +537,7 @@ trait BoundedDequeBasedMessageQueue extends DequeBasedMessageQueue with BoundedD
 /**
  * MailboxType is a factory to create MessageQueues for an optionally
  * provided ActorContext.
+  * 创建`MessageQueue`的工厂类
  *
  * <b>Possibly Important Notice</b>
  *
@@ -681,6 +691,7 @@ object BoundedDequeBasedMailbox {
 
 /**
  * Trait to signal that an Actor requires a certain type of message queue semantics.
+  * 用来标识,一个actor需要特定类型的消息队列
  *
  * The mailbox type will be looked up by mapping the type T via akka.actor.mailbox.requirements in the config,
  * to a mailbox configuration. If no mailbox is assigned on Props or in deployment config then this one will be used.

@@ -23,6 +23,8 @@ import akka.japi.Util.immutableSeq
  * for each message which is to be dispatched). The resulting RoutedActorRef
  * optimizes the sending of the message so that it does NOT go through the
  * router’s mailbox unless the route returns an empty recipient set.
+  * 该trait描述了一个router工厂 : 它创建真实的Router actor,并且创建routing table(一个用来决定每个消息的接收者的函数)
+  * `RoutedActorRef`优化了消息的发送,只有route返回一个空的接收者集合时,
  *
  * '''Caution:''' This means
  * that the route function is evaluated concurrently without protection by

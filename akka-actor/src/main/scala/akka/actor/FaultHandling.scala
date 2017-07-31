@@ -27,7 +27,9 @@ private[akka] case object ChildNameReserved extends ChildStats
 
 /**
  * ChildRestartStats is the statistics kept by every parent Actor for every child Actor
+  * ChildRestartStats是由父Actor保管的,其每一个子Actor的统计信息
  * and is used for SupervisorStrategies to know how to deal with problems that occur for the children.
+  * 用于监控策略,在子Actor出现问题时的进行处理的依据
  */
 case class ChildRestartStats(child: ActorRef, var maxNrOfRetriesCount: Int = 0, var restartTimeWindowStartNanos: Long = 0L)
   extends ChildStats {
@@ -37,30 +39,42 @@ case class ChildRestartStats(child: ActorRef, var maxNrOfRetriesCount: Int = 0, 
   //FIXME How about making ChildRestartStats immutable and then move these methods into the actual supervisor strategies?
   def requestRestartPermission(retriesWindow: (Option[Int], Option[Int])): Boolean =
     retriesWindow match {
+            // 设置了重试次数,首先判断重试次数是否大于1,小于1,则直接不能restart,返回false
       case (Some(retries), _) if retries < 1 ⇒ false
+          // 如果设置了重试次数,但没有设置窗口,则判断restart次数是否达到阈值
       case (Some(retries), None)             ⇒ { maxNrOfRetriesCount += 1; maxNrOfRetriesCount <= retries }
+          // 重试次数与窗口都设置时,进行窗口期判断
       case (x, Some(window))                 ⇒ retriesInWindowOkay(if (x.isDefined) x.get else 1, window)
+          // 没有设置重试次数时,则不做重试的阈值限制,直接进行restart
       case (None, _)                         ⇒ true
     }
 
   private def retriesInWindowOkay(retries: Int, window: Int): Boolean = {
     /*
      * Simple window algorithm: window is kept open for a certain time
+     * 简单的窗口算法 : 在restart后的一段时间内,窗口保持打开状态
      * after a restart and if enough restarts happen during this time, it
+     * 如果在这段时间内,restart的次数达到阈值,则拒绝重启
      * denies. Otherwise window closes and the scheme starts over.
+     * 否则,窗口关闭,所有流程重新来过
      */
     val retriesDone = maxNrOfRetriesCount + 1
     val now = System.nanoTime
+      // 获取窗口开启时间
     val windowStart =
       if (restartTimeWindowStartNanos == 0) {
+          // 如果上次的开启时间为0,则设置为当前时间
         restartTimeWindowStartNanos = now
         now
       } else restartTimeWindowStartNanos
+      // 检查当前窗口期是否有效
     val insideWindow = (now - windowStart) <= TimeUnit.MILLISECONDS.toNanos(window)
     if (insideWindow) {
+        // 当前窗口期有效,则判断重试次数是否达到阈值
       maxNrOfRetriesCount = retriesDone
       retriesDone <= retries
     } else {
+        // 如果窗口期已经失效,则重启窗口
       maxNrOfRetriesCount = 1
       restartTimeWindowStartNanos = now
       true
@@ -70,7 +84,9 @@ case class ChildRestartStats(child: ActorRef, var maxNrOfRetriesCount: Int = 0, 
 
 /**
  * Implement this interface in order to configure the supervisorStrategy for
+  * 实现这个接口来对顶层守护actor(/user)进行 监控策略 的配置
  * the top-level guardian actor (`/user`). An instance of this class must be
+  * 这个类的构建函数必须是无参的
  * instantiable using a no-arg constructor.
  */
 trait SupervisorStrategyConfigurator {
@@ -145,6 +161,7 @@ object SupervisorStrategy extends SupervisorStrategyLowPriorityImplicits {
 
   /**
    * When supervisorStrategy is not specified for an actor this
+    * 当监控策略没有为一个actor指定时,这个Decider被默认使用
    * [[Decider]] is used by default in the supervisor strategy.
    * The child will be stopped when [[akka.actor.ActorInitializationException]],
    * [[akka.actor.ActorKilledException]], or [[akka.actor.DeathPactException]] is
@@ -191,6 +208,7 @@ object SupervisorStrategy extends SupervisorStrategyLowPriorityImplicits {
   /**
    * Decider builder which just checks whether one of
    * the given Throwables matches the cause and restarts, otherwise escalates.
+    * 如果给定的`Throwable`在`trapExit`集合中,则Restart,否则Escalate
    */
   def makeDecider(trapExit: immutable.Seq[Class[_ <: Throwable]]): Decider = {
     case x ⇒ if (trapExit exists (_ isInstance x)) Restart else Escalate
@@ -245,13 +263,17 @@ object SupervisorStrategy extends SupervisorStrategyLowPriorityImplicits {
 
 /**
  * An Akka SupervisorStrategy is the policy to apply for crashing children.
+  * 一个akka的监控策略,是应用到crash children的处理策略
  *
  * <b>IMPORTANT:</b>
  *
  * You should not normally need to create new subclasses, instead use the
+  * 你不应该构建新的子类,应该使用已经存在的OneForOneStrategy或者AllForOneStrategy
  * existing [[akka.actor.OneForOneStrategy]] or [[akka.actor.AllForOneStrategy]],
  * but if you do, please read the docs of the methods below carefully, as
+  * 但是如果你非要构建子类,请认真阅读下面各方法的说明,
  * incorrect implementations may lead to “blocked” actor systems (i.e.
+  * 因为不正确的实现可能会导致整个ActorSystem的堵塞,比如永久的悬挂住actor
  * permanently suspended actors).
  */
 abstract class SupervisorStrategy {
@@ -260,32 +282,45 @@ abstract class SupervisorStrategy {
 
   /**
    * Returns the Decider that is associated with this SupervisorStrategy.
+    * 返回与监管策略相绑定的决策器
    * The Decider is invoked by the default implementation of `handleFailure`
+    * 决策器会被`handleFailure`的默认实现调用,以获取需要执行的指令
    * to obtain the Directive to be applied.
    */
   def decider: Decider
 
   /**
    * This method is called after the child has been removed from the set of children.
+    * 这个方法在child被从children中移除时调用
    * It does not need to do anything special. Exceptions thrown from this method
+    * 不需要做任何特殊的处理
    * do NOT make the actor fail if this happens during termination.
+    * 如果在终止时,这个方法抛出了异常,也不会导致actor失败
    */
   def handleChildTerminated(context: ActorContext, child: ActorRef, children: Iterable[ActorRef]): Unit
 
   /**
    * This method is called to act on the failure of a child: restart if the flag is true, stop otherwise.
+    * 这个方法被调用在失败的actor身上执行
+    * restart这个flag为ture时,进行重启,否则则进行stop
    */
   def processFailure(context: ActorContext, restart: Boolean, child: ActorRef, cause: Throwable, stats: ChildRestartStats, children: Iterable[ChildRestartStats]): Unit
 
   /**
    * This is the main entry point: in case of a child’s failure, this method
+    * 这个方法是主要的入口 : 在子actor的失败情况下,这个方法必须尝试处理失败,可以通过
    * must try to handle the failure by resuming, restarting or stopping the
+    * resuming、restarting、stopping这个child,并且返回true
    * child (and returning `true`), or it returns `false` to escalate the
+    * 或者返回false,同时升级异常,也就是将exception向上层抛出
    * failure, which will lead to this actor re-throwing the exception which
    * caused the failure. The exception will not be wrapped.
+    * 这个异常不会被包装,原封不动的抛出
    *
    * This method calls [[akka.actor.SupervisorStrategy#logFailure]], which will
+    * 这个方法会调用`logFailure`,没有进行故障升级时,会打印这个失败信息
    * log the failure unless it is escalated. You can customize the logging by
+    * 你可以自定义log,通过设置`loggingEnabled`为false,。。。。
    * setting [[akka.actor.SupervisorStrategy#loggingEnabled]] to `false` and
    * do the logging inside the `decider` or override the `logFailure` method.
    *
@@ -351,12 +386,15 @@ abstract class SupervisorStrategy {
 
   /**
    * Restart the given child, possibly suspending it first.
+    * 重启给定的child,有可能先进行暂停操作
    *
    * <b>IMPORTANT:</b>
    *
    * If the child is the currently failing one, it will already have been
+    * 如果child刚失败的,它应该已经被暂停了,因此`suspendFirst`必须为false
    * suspended, hence `suspendFirst` must be false. If the child is not the
    * currently failing one, then it did not request this treatment and is
+    * 如果这个child不是刚失败的,
    * therefore not prepared to be resumed without prior suspend.
    */
   final def restartChild(child: ActorRef, cause: Throwable, suspendFirst: Boolean): Unit = {
@@ -369,12 +407,14 @@ abstract class SupervisorStrategy {
 
 /**
  * Applies the fault handling `Directive` (Resume, Restart, Stop) specified in the `Decider`
+  * 当有一个child失败时,将在`Decider`中指定的故障处理指令应用到所有的children中
  * to all children when one fails, as opposed to [[akka.actor.OneForOneStrategy]] that applies
+  * 与`OneForOneStrategy`只应用到那个失败的child不同
  * it only to the child actor that failed.
  *
  * @param maxNrOfRetries the number of times a child actor is allowed to be restarted, negative value means no limit,
- *   if the limit is exceeded the child actor is stopped
- * @param withinTimeRange duration of the time window for maxNrOfRetries, Duration.Inf means no window
+ *   if the limit is exceeded the child actor is stopped    child允许重启的次数,负数意味着不做限制,如果达到阈值,则stop
+ * @param withinTimeRange duration of the time window for maxNrOfRetries, Duration.Inf means no window 窗口大小,Duration.Inf意味着没有窗口
  * @param decider mapping from Throwable to [[akka.actor.SupervisorStrategy.Directive]], you can also use a
  *   [[scala.collection.immutable.Seq]] of Throwables which maps the given Throwables to restarts, otherwise escalates.
  * @param loggingEnabled the strategy logs the failure if this is enabled (true), by default it is enabled

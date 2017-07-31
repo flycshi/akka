@@ -141,7 +141,9 @@ abstract class AbstractSchedulerBase extends Scheduler
 //#cancellable
 /**
  * Signifies something that can be cancelled
+  * 标识某些东西可以被取消
  * There is no strict guarantee that the implementation is thread-safe,
+  * 这里不能担保其实现是线程安全的,但是最好做成线程安全的
  * but it should be good practice to make it so.
  */
 trait Cancellable {
@@ -149,6 +151,8 @@ trait Cancellable {
    * Cancels this Cancellable and returns true if that was successful.
    * If this cancellable was (concurrently) cancelled already, then this method
    * will return false although isCancelled will return true.
+    * 取消这个`Cancellable`,如果取消成功,则返回true
+    * 如果这个`Cancellable`由于并发的缘故已经被取消了,那么这个方法将返回false,尽管`isCancelled`将返回true
    *
    * Java & Scala API
    */
@@ -156,6 +160,7 @@ trait Cancellable {
 
   /**
    * Returns true if and only if this Cancellable has been successfully cancelled
+    * 当且仅当这个`Cancellable`被成功取消才返回true
    *
    * Java & Scala API
    */

@@ -39,6 +39,7 @@ private[akka] trait ChildrenContainer {
  * INTERNAL API
  *
  * This object holds the classes performing the logic of managing the children
+  * 这个object掌管着那些类, 管理一个Actor的children的逻辑
  * of an actor, hence they are intimately tied to ActorCell.
  */
 private[akka] object ChildrenContainer {
@@ -46,6 +47,7 @@ private[akka] object ChildrenContainer {
   sealed trait SuspendReason
   case object UserRequest extends SuspendReason
   // careful with those system messages, all handling to be taking place in ActorCell.scala!
+  // 对于这些系统消息,需要小心处理,并在`ActorCell.scala`中处理
   case class Recreation(cause: Throwable) extends SuspendReason with WaitingForChildren
   case class Creation() extends SuspendReason with WaitingForChildren
   case object Termination extends SuspendReason
@@ -79,6 +81,7 @@ private[akka] object ChildrenContainer {
 
   /**
    * This is the empty container, shared among all leaf actors.
+    * 所有的叶子actor,都共享这个空的child container
    */
   object EmptyChildrenContainer extends EmptyChildrenContainer {
     override def toString = "no children"
@@ -86,8 +89,10 @@ private[akka] object ChildrenContainer {
 
   /**
    * This is the empty container which is installed after the last child has
+    * 执行stop操作时,最后一个child被终止后,会被赋予这个空的container
    * terminated while stopping; it is necessary to distinguish from the normal
    * empty state while calling handleChildTerminated() for the last time.
+    * 在调用`handleChildTerminated()`时,很有必要与正常的空状态进行区分
    */
   object TerminatedChildrenContainer extends EmptyChildrenContainer {
     override def add(name: String, stats: ChildRestartStats): ChildrenContainer = this
@@ -100,6 +105,7 @@ private[akka] object ChildrenContainer {
 
   /**
    * Normal children container: we do have at least one child, but none of our
+    * 至少拥有一个child,但是没有child当前处于terminating状态
    * children are currently terminating (which is the time period between
    * calling context.stop(child) and processing the ChildTerminated() system
    * message).

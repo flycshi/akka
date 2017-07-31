@@ -173,9 +173,13 @@ private[akka] class EarliestFirstSystemMessageList(val head: SystemMessage) exte
 
 /**
  * System messages are handled specially: they form their own queue within
+  * 系统消息被特殊处理的 : 它们在各自actor的mailbox中形成自己的队列
  * each actor’s mailbox. This queue is encoded in the messages themselves to
+  * 这个队列是在消息中自己连接起来的,是为了避免额外的空间占用
  * avoid extra allocations and overhead. The next pointer is a normal var, and
+  * next属性一般是个var
  * it does not need to be volatile because in the enqueuing method its update
+  * 它不需要volatile,因为在入队方法中,它被
  * is immediately succeeded by a volatile write and all reads happen after the
  * volatile read in the dequeuing thread. Afterwards, the obtained list of
  * system messages is handled in a single thread only and not ever passed around,

@@ -172,6 +172,7 @@ sealed trait ActorPath extends Comparable[ActorPath] with Serializable {
 
 /**
  * Root of the hierarchy of ActorPaths. There is exactly root per ActorSystem
+  * ActorPaths的根层级
  * and node (for remote-enabled or clustered systems).
  */
 @SerialVersionUID(1L)

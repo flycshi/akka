@@ -21,8 +21,10 @@ import java.lang.reflect.TypeVariable
 
 /**
  * Factory for Props instances.
+  * `Props`实例的工程类
  *
  * Props is a ActorRef configuration object, that is immutable, so it is thread safe and fully sharable.
+  * `Props`是一个`ActorRef`的配置类,是不可变的,所以是线程安全的
  *
  * Used when creating new actors through <code>ActorSystem.actorOf</code> and <code>ActorContext.actorOf</code>.
  */

@@ -21,6 +21,7 @@ import akka.dispatch.MessageDispatcher
  *
  * A RoutedActorRef is an ActorRef that has a set of connected ActorRef and it uses a Router to
  * send a message to one (or more) of these actors.
+  * 一个RoutedActorRef是这样的一个ActorRef,它有一个相互connected的ActorRef的集合,使用一个Router将一个消息发送给一个或多个那些actors
  */
 private[akka] class RoutedActorRef(
   _system: ActorSystemImpl,

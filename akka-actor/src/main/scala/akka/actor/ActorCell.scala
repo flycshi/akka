@@ -20,7 +20,9 @@ import akka.dispatch.MessageDispatcher
 
 /**
  * The actor context - the view of the actor cell from the actor.
+  * ActorContext - 从actor的视角看到的ActorCell
  * Exposes contextual information for the actor and the current message.
+  * 披露了Actor和当前msg的上下文信息
  *
  * There are several possibilities for creating actors (see [[akka.actor.Props]]
  * for details on `props`):
@@ -40,6 +42,7 @@ import akka.dispatch.MessageDispatcher
  * }}}
  *
  * Where no name is given explicitly, one will be automatically generated.
+  * 对于没有明确指定name的actor,会自动产生一个name
  */
 trait ActorContext extends ActorRefFactory {
 
@@ -219,10 +222,12 @@ trait UntypedActorContext extends ActorContext {
 private[akka] trait Cell {
   /**
    * The “self” reference which this Cell is attached to.
+    * 本Cell关联的Ref
    */
   def self: ActorRef
   /**
    * The system within which this Cell lives.
+    * 本Cell居住的system
    */
   def system: ActorSystem
   /**
@@ -231,7 +236,9 @@ private[akka] trait Cell {
   def systemImpl: ActorSystemImpl
   /**
    * Start the cell: enqueued message must not be processed before this has
+    * 启动Cell,入队的msg,在该方法调用前,一定不能被处理
    * been called. The usual action is to attach the mailbox to a dispatcher.
+    * 会将mailbox关联到一个dispatcher上去
    */
   def start(): this.type
   /**
@@ -320,6 +327,7 @@ private[akka] trait Cell {
  * Everything in here is completely Akka PRIVATE. You will not find any
  * supported APIs in this place. This is not the API you were looking
  * for! (waves hand)
+  * 这里的一切都是Akka完全私有的。你在这里发现不了任何对外的api。这里不是你寻找api的地方。(挥手)
  */
 private[akka] object ActorCell {
   val contextStack = new ThreadLocal[List[ActorContext]] {

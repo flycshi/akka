@@ -10,11 +10,15 @@ import scala.collection.immutable
 
 /**
  * The address specifies the physical location under which an Actor can be
+  * Address指明访问一个Actor的物理位置。例如本地地址,用ActorSystem的name标识
  * reached. Examples are local addresses, identified by the ActorSystem’s
  * name, and remote addresses, identified by protocol, host and port.
+  * 远程地址,通过协议、主机、端口来标识
  *
  * This class is final to allow use as a case class (copy method etc.); if
+  * 这个class可以作为case class使用
  * for example a remote transport would want to associate additional
+  * 如果一个远程传输中,想要关联附加信息在address中,那必须在外部做
  * information with an address, then this must be done externally.
  */
 @SerialVersionUID(1L)
@@ -160,3 +164,4 @@ object ActorPathExtractor extends PathUtils {
       case _: URISyntaxException ⇒ None
     }
 }
+

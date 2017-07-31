@@ -21,6 +21,7 @@ import akka.dispatch.Mailboxes
 
 /**
  * Interface for all ActorRef providers to implement.
+  * 所有的ActorRef提供者需要实现的接口
  */
 trait ActorRefProvider {
 
@@ -175,6 +176,7 @@ trait ActorRefProvider {
 /**
  * Interface implemented by ActorSystem and ActorContext, the only two places
  * from which you can get fresh actors.
+  * 被ActorSystem和ActorContext实现的接口,仅有的两处可以获取新Actor的地方
  */
 @implicitNotFound("implicit ActorRefFactory required: if outside of an Actor you need an implicit ActorSystem, inside of an actor this should be the implicit ActorContext")
 trait ActorRefFactory {
